@@ -38,11 +38,6 @@ def look(x:int, y:int, width=320, height=240):
     pose = dict(Msec=500, ServoMap=servo_map)
     op.play_pose(IP, PORT, pose)
 
-def make_wav(text:str, output_file_path='temp.wav', slow=False) -> int:
-    gTTS(text='こんにちは', lang='ja', slow=slow).save('temp.mp3')
-    sound = AudioSegment.from_mp3('temp.mp3')
-    sound.export(output_file_path, format='wav')
-    return sound.duration_seconds
 
 cap = cv2.VideoCapture('udp://127.0.0.1:5000')
 # カスケード分類器の選択
@@ -65,14 +60,18 @@ try:
             raise KeyboardInterrupt
 
         if time.time() - timestamp > 0.5:
-            print(recognized_rects)
             if len(recognized_rects) != 0:
                 x1, y1, w, h = recognized_rects[0]
                 x = x1 + w // 2
                 y = y1 + h // 2
-                print(f'x={x}, y={y}')
                 look(x, y)
-                op.play_wav('10.1.1.107', 22222, 'temp.wav')
+                def make_wav(text:str, output_file_path='temp.wav', slow=False) -> int:
+                    gTTS(text='こんにちは', lang='ja', slow=slow).save('temp.mp3')
+                    sound = AudioSegment.from_mp3('temp.mp3')
+                    sound.export(output_file_path, format='wav')
+                    return sound.duration_seconds
+                for i in range(1):
+                    op.play_wav('10.1.1.107', 22222, 'temp.wav')
 
 
 except KeyboardInterrupt:
