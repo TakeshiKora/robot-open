@@ -5,7 +5,7 @@ import time
 import robotop as op
 from gtts import gTTS 
 from pydub import AudioSegment
-
+import azure.cognitiveservices.speech as speechsdk
 
 
 axes = op.read_axes('10.1.1.107', 22222)
@@ -103,15 +103,102 @@ servo_map = dict(HEAD_R=45)
 pose = dict(Msec=500, ServoMap=servo_map, LedMap=led_map)
 op.play_pose('10.1.1.107', 22222, pose)
 
-text = '文化情報学部に興味はない？'
-make_wav(text)
-op.play_wav('10.1.1.107', 22222, 'temp.wav')
-time.sleep(3)
+#勧誘の会話
+DIALOG = [
+    "文化情報学部に興味はある？",
+    "はいかいいえで答えてね",
+    {
+        "はい" : "それは良かったです。興味がある方には特別に僕がお話をしてあげるね。",
+        "いいえ" : "ちょっとお話聞いてみてよ！"
+    },
+    "文化情報学部は文理融合の学部で、プログラミングだけでなく、言語や行動などについて君の好きな分野を学ぶことができるよ。"
+    "文化情報学部に入学してくれたら、僕にまた会えると思うから受験がんばってね。"
+
+]
+
+# 音声認識結果を保持するためのリスト
+SPEECH_RECOGNITION_MEMORY = ['dummy']
 
 
-servo_map = dict(HEAD_R=0, HEAD_P=-5, HEAD_Y=0, BODY_Y=0, 
-                L_SHOU=-90, L_ELBO=0, R_SHOU=90, R_ELBO=0)
-pose = dict(Msec=1000, ServoMap=servo_map, LedMap=led_map)
-op.play_pose('10.1.1.107', 22222, pose)
-time.sleep(2)
+SPEECH_API_KEY = 'APIキーをコピペ'
+SERVICE_REGION = 'japanwest'
+LANG = 'ja-JP'
 
+done = False
+
+# Callback funcs
+def recognizing_cb(evt):
+    print(f'Recognizing: {evt.result.text}')
+
+def recognized_cb(evt):
+    print(f'Recognized: {evt.result.text}')
+    # 音声認識が完了したらリストに結果を追加する
+    global SPEECH_RECOGNITION_MEMORY
+    SPEECH_RECOGNITION_MEMORY.append(evt.result.text)
+
+def session_started_cb(evt):
+    print(f'Session started: {evt}')
+
+def session_stopped_cb(evt):
+    print(f'Session stopped: {evt}')
+    global done
+    done = True
+
+def canceled_cb(evt):
+    print(f'CLOSING on {evt}')
+    global done
+    done = True
+
+
+# Config a speech recognizer
+speech_config = speechsdk.SpeechConfig(subscription=SPEECH_API_KEY, region=SERVICE_REGION)
+speech_config.speech_recognition_language=LANG
+speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config)
+
+# Connect callbacks to the events fired by the speech recognizer
+speech_recognizer.recognizing.connect(recognizing_cb)
+speech_recognizer.recognized.connect(recognized_cb)
+speech_recognizer.session_started.connect(session_started_cb)
+speech_recognizer.session_stopped.connect(session_stopped_cb)
+speech_recognizer.canceled.connect(canceled_cb)
+
+# Start continuous speech recognition
+speech_recognizer.start_continuous_recognition()
+
+
+def get_matched_speech(line:dict) -> bool:
+    # 音声認識結果が空だったらFalse
+    if not SPEECH_RECOGNITION_MEMORY: return False
+
+    for keyword, speech in line.items():
+        if keyword in SPEECH_RECOGNITION_MEMORY[-1]:
+            return speech
+    return None
+
+try:
+    for line in DIALOG:
+        if isinstance(line, str):
+            # リストの中身が文字列の時、その文字列を発話する
+            print('ロボットの発話：', line)
+            time.sleep(2)
+            continue
+
+        if isinstance(line, dict):
+            # リストの中身が辞書の時、音声認識結果に含まれる
+            # キーがあるかどうかを調べる。あれば、そのキーの
+            # 値を発話する。なければ、そのような音声認識結果
+            # が得られるまでループを続けて待つ
+            while True:
+                speech = get_matched_speech(line)
+                if speech:
+                    print('ロボットの発話：', speech)
+                    time.sleep(2)
+                    break
+                
+                time.sleep(1)
+                continue
+
+except KeyboardInterrupt:
+    pass
+
+speech_recognizer.stop_continuous_recognition()
