@@ -8,9 +8,6 @@ from pydub import AudioSegment
 
 
 
-IP = '192.168.11.22'
-PORT = 22222
-
 axes = op.read_axes('10.1.1.107', 22222)
 print(axes)
 time.sleep(2)
@@ -37,6 +34,8 @@ text = 'こんにちは。僕は文化情報学部のソータです'
 make_wav(text)
 op.play_wav('10.1.1.107', 22222, 'temp.wav')
 
+IP = '10.1.1.107'
+PORT = 22222
 
 def look(x:int, y:int, width=320, height=240):
     """ x, y を見る """
@@ -88,10 +87,12 @@ try:
             raise KeyboardInterrupt
 
         if time.time() - timestamp > 0.5:
+            print(recognized_rects)
             if len(recognized_rects) != 0:
                 x1, y1, w, h = recognized_rects[0]
                 x = x1 + w // 2
                 y = y1 + h // 2
+                print(f'x={x}, y={y}')
                 look(x, y)
                 timestamp = time.time()
 
