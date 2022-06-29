@@ -23,7 +23,6 @@ led_map = dict(L_EYE_R=255, L_EYE_G=255, L_EYE_B=255,
                 R_EYE_R=255, R_EYE_G=255, R_EYE_B=255)
 pose = dict(Msec=1000, ServoMap=servo_map, LedMap=led_map)
 op.play_pose('10.1.1.107', 22222, pose)
-time.sleep(2)
 
 def make_wav(text:str, output_file_path='temp.wav', slow=False) -> int:
     gTTS(text=text, lang='ja', slow=slow).save('temp.mp3')
@@ -95,8 +94,24 @@ try:
                 print(f'x={x}, y={y}')
                 look(x, y)
                 timestamp = time.time()
-
-
+                break
 except KeyboardInterrupt:
     cap.release()
     cv2.destroyAllWindows()
+
+servo_map = dict(HEAD_R=45)
+pose = dict(Msec=500, ServoMap=servo_map, LedMap=led_map)
+op.play_pose('10.1.1.107', 22222, pose)
+
+text = '文化情報学部に興味はない？'
+make_wav(text)
+op.play_wav('10.1.1.107', 22222, 'temp.wav')
+time.sleep(3)
+
+
+servo_map = dict(HEAD_R=0, HEAD_P=-5, HEAD_Y=0, BODY_Y=0, 
+                L_SHOU=-90, L_ELBO=0, R_SHOU=90, R_ELBO=0)
+pose = dict(Msec=1000, ServoMap=servo_map, LedMap=led_map)
+op.play_pose('10.1.1.107', 22222, pose)
+time.sleep(2)
+
