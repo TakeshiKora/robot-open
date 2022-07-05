@@ -1,7 +1,7 @@
 import azure.cognitiveservices.speech as speechsdk
 import time
 
-SPEECH_API_KEY = 'c472e5d9fc734c7e95de345bf286e4c8'
+SPEECH_API_KEY = 'Azure音声サービスのキーを入力'
 SERVICE_REGION = 'japanwest'
 LANG = 'ja-JP'
 

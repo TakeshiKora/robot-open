@@ -2,12 +2,11 @@ from tkinter import Text
 import cv2
 import robotop as op
 import time
-import robotop as op
 from gtts import gTTS 
 from pydub import AudioSegment
 import azure.cognitiveservices.speech as speechsdk
 
-
+#挨拶（左手あげる）
 axes = op.read_axes('10.1.1.107', 22222)
 print(axes)
 time.sleep(2)
@@ -24,6 +23,7 @@ led_map = dict(L_EYE_R=255, L_EYE_G=255, L_EYE_B=255,
 pose = dict(Msec=1000, ServoMap=servo_map, LedMap=led_map)
 op.play_pose('10.1.1.107', 22222, pose)
 
+#挨拶の実行（声）
 def make_wav(text:str, output_file_path='temp.wav', slow=False) -> int:
     gTTS(text=text, lang='ja', slow=slow).save('temp.mp3')
     sound = AudioSegment.from_mp3('temp.mp3')
@@ -32,6 +32,12 @@ def make_wav(text:str, output_file_path='temp.wav', slow=False) -> int:
 text = 'こんにちは。僕は文化情報学部のソータです'
 make_wav(text)
 op.play_wav('10.1.1.107', 22222, 'temp.wav')
+
+#アイドル動作
+op.play_idle_motion('10.1.1.107', 22222)
+time.sleep(5)
+op.stop_idle_motion('10.1.1.107', 22222)
+time.sleep(2)
 
 IP = '10.1.1.107'
 PORT = 22222
@@ -84,7 +90,7 @@ try:
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             raise KeyboardInterrupt
-
+#最初に顔認識した方に目線をやる
         if time.time() - timestamp > 0.5:
             print(recognized_rects)
             if len(recognized_rects) != 0:
@@ -102,6 +108,7 @@ except KeyboardInterrupt:
 servo_map = dict(HEAD_R=45)
 pose = dict(Msec=500, ServoMap=servo_map, LedMap=led_map)
 op.play_pose('10.1.1.107', 22222, pose)
+
 
 #勧誘の会話
 DIALOG = [
